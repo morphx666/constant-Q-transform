@@ -13,16 +13,16 @@ namespace ConstantQtransform
     class Program
     {
         public static double fs = 44100;
-        public static double Q = 23;
         public static double fmin = 60;
         public static double fmax = 6000;
         public static double fratio = 1.0 / 24; //1オクターブの周波数bin数
         public static double q_rate = 20.0 * fratio; //Q比
+        public static double Q = (int)(1.0/(Math.Pow(2,fratio)-1)*q_rate);
 
         static void Main(string[] args)
         {
             double[] freqs = get_freqs(fmin, get_freq_num(fmin, fmax, fratio), fratio);
-            Complex[,] kernel = calcKernel_matrix(freqs, 1024);
+            Complex[,] kernel = calcKernel_matrix(freqs);
             double[,] kernel_pow = new double[kernel.GetLength(0), kernel.GetLength(1)];
             for (int i = 0; i < kernel.GetLength(0); i++)
             {
@@ -37,7 +37,7 @@ namespace ConstantQtransform
         //対数周波数bin数の計算
         static int get_freq_num(double fmin, double fmax, double fratio)
         {
-            return (int)Math.Round(Math.Log(fmax / fmin, 2) / fratio) + 1;
+            return (int)Math.Round(Math.Log((double)fmax / fmin, 2) / fratio) + 1;
         }
         //--------------------------------------------------------------------------
         //各対数周波数binに対する周波数を計算
@@ -51,8 +51,9 @@ namespace ConstantQtransform
 
         //--------------------------------------------------------------------------
         //Kernel行列の計算
-        static Complex[,] calcKernel_matrix(double[] freqs, int fftlen)
+        static Complex[,] calcKernel_matrix(double[] freqs)
         {
+            int fftlen = (int)(Math.Pow(2, Math.Ceiling((Math.Log(fs * Q / freqs[0], 2)))));
             Complex[,] kernel = new Complex[freqs.Length, fftlen];
             Complex[] tmp_kernel = new Complex[fftlen];
 
@@ -66,15 +67,21 @@ namespace ConstantQtransform
                     hamming[i] = 1;
                 Nm.Windowing(hamming, Nm.DataWindowType.Hamming);
                 for (int i = start_win; i < start_win + N_k; i++)
-                    tmp_kernel[i] = hamming[i - start_win] / N_k * Complex.Exp(2 * Math.PI * Complex.ImaginaryOne * Q * (i - start_win) / N_k);
-                tmp_kernel = Nm.FastFourierTransform(tmp_kernel, false); //sw==falseでfftlenで割る
-                for (int i = 0; i < fftlen; i++)
                 {
-                    if (tmp_kernel[i].Magnitude <= 0.0054)
-                        kernel[k, i] = Complex.Zero;
-                    else
-                        kernel[k, i] = Complex.Conjugate(tmp_kernel[i]);
+                    tmp_kernel[i] = hamming[i - start_win] / N_k * Complex.Exp(2 * Math.PI * Complex.ImaginaryOne * Q * (i - start_win) / N_k);
                 }
+                tmp_kernel = Nm.FastFourierTransform(tmp_kernel, false); //sw==falseでfftlenで割る
+                double[] d = new double[tmp_kernel.Length];
+                for (int i = 0; i < tmp_kernel.Length; i++)
+                    d[i] = tmp_kernel[i].Magnitude;
+                double max = d.Max();
+                    for (int i = 0; i < fftlen; i++)
+                    {
+                        //if (tmp_kernel[i].Magnitude <= 0.0054)
+                        //    kernel[k, i] = Complex.Zero;
+                        //else
+                        kernel[k, i] = Complex.Conjugate(tmp_kernel[i]);
+                    }
             }
 
             return kernel;
