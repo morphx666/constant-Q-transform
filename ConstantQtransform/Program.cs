@@ -12,7 +12,7 @@ namespace ConstantQtransform
 {
     class Program
     {
-        public static double fs = 44100;
+        public static double fs = 22050;
         public static double fmin = 60;
         public static double fmax = 6000;
         public static double fratio = 1.0 / 24; //1オクターブの周波数bin数
@@ -53,6 +53,7 @@ namespace ConstantQtransform
         //Kernel行列の計算
         static Complex[,] calcKernel_matrix(double[] freqs)
         {
+            //窓幅N[k]の最大値
             int fftlen = (int)(Math.Pow(2, Math.Ceiling((Math.Log(fs * Q / freqs[0], 2)))));
             Complex[,] kernel = new Complex[freqs.Length, fftlen];
             Complex[] tmp_kernel = new Complex[fftlen];
@@ -60,7 +61,7 @@ namespace ConstantQtransform
             for (int k = 0; k < freqs.Length; k++)
             {
                 double freq = freqs[k];
-                int N_k = (int)(fs * Q / freq);
+                int N_k = (int)(fs * Q / freq);     //窓幅
                 int start_win = (fftlen - N_k) / 2; //FFT窓の中心を解析部分に合わせる
                 double[] hamming = new double[N_k];
                 for (int i = 0; i < N_k; i++)
