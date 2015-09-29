@@ -31,7 +31,8 @@ namespace ConstantQtransform
             //        kernel_pow[i, j] = kernel[i, j].Magnitude;
             //    }
             //}
-            Tuple<double[][], int> tu = WaveFile.Load(@"C:\Users\優\Desktop\音素材\mix3.wav");
+            //Tuple<double[][], int> tu = WaveFile.Load(@"C:\Users\優\Desktop\音素材\mix3.wav");
+            Tuple<double[][], int> tu = WaveFile.Load(@"C:\Users\優\Desktop\音素材\mix3v3.wav");
             double[] wavdata = tu.Item1[0];
             fs = tu.Item2;
             double[,] output = constantQ_transformP(wavdata);
